@@ -63,6 +63,10 @@ func initLengthDictionary(moveGraph map[[3]int][][3]int) map[[3]int]float64 {
 
 func updateLengthDictionary(M map[[3]int][][3]int, L map[[3]int]float64) map[[3]int]float64 {
     // This function updates the length dictionary
+    
+    changesMade := true
+    // Creates a variable to check for changes
+
     for changesMade {
         changesMade = false
 
@@ -158,17 +162,20 @@ func main() {
 	}
 
 	// Print the adjacency list of the di-graph
+    fmt.Println("The adjacency list of the di-graph:")
 	for node, neighbors := range diGraph {
 		fmt.Printf("%d: %v\n", node, neighbors)
 	}
+    fmt.Println()
 
-	fmt.Println()
+    fmt.Println("Move graph:")
 
 	moves := makeMoveGraph(diGraph)
 
 	for state, neighbors := range moves {
 		fmt.Printf("%v: %v\n", state, neighbors)
 	}
+    fmt.Println()
      
     lengths := initLengthDictionary(moves)
     fmt.Println("Lengths:")
