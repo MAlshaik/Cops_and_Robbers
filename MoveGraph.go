@@ -1,10 +1,20 @@
+// This code can also be views via github at https://github.com/MAlshaik/Cops_and_Robbers
+
 package main
 
 import "fmt"
 import "math"
 
+func contains(slice []int, val int) bool {
+    for _, item := range slice {
+        if item == val {
+            return true
+        }
+    }
+    return false
+}
 
-func makeReflexive(graph map[int][]int) {
+func makeReflexive(graph map[int][]int) map[int][]int{
 	/*
     In this code, the makeReflexive function takes a list containing lists
     of integers and makes every vertex connect to itself by an edge.
@@ -12,7 +22,18 @@ func makeReflexive(graph map[int][]int) {
     for vertex := range graph {
 		graph[vertex] = append(graph[vertex], vertex)
 	}
+
+    for vertex, adjacentVertices := range graph {
+        for _, adjacentVertex := range adjacentVertices {
+            if !contains(graph[adjacentVertex], vertex) {
+                // the edge (vertex, adjacentVertex) already exists in the graph
+                graph[adjacentVertex] = []int{adjacentVertex}
+            }         
+        }
+    }
+	return graph
 }
+
 
 func makeMoveGraph(G map[int][]int) map[[3]int][][3]int {
     /*
@@ -24,22 +45,29 @@ func makeMoveGraph(G map[int][]int) map[[3]int][][3]int {
     represent the cops and robbers turn respectively. x and y are the 
     position of the cops and robbers respectively.
     */
-	moves := make(map[[3]int][][3]int)
+    moves := make(map[[3]int][][3]int)
 
-	// Loop over each pair of vertices in G and their neighbors
-	for x, _ := range G {
-		for y, _ := range G {
-			for _, z := range G[x] {
-				// Add column move edge from (x,y,'C') to (z,y,'R')
-				moves[[3]int{x, y, 'C'}] = append(moves[[3]int{x, y, 'C'}], [3]int{z, y, 'R'})
-				// Add row move edge from (y,x,'R') to (y,z,'C')
-				moves[[3]int{y, x, 'R'}] = append(moves[[3]int{y, x, 'R'}], [3]int{y, z, 'C'})
-			}
-		}
-	}
+    // Add self-loops to all vertices
+    for x := range G {
+        G[x] = append(G[x], x)
+    }
+      
 
-	return moves
+    // Loop over each pair of vertices in G and their neighbors
+    for x, _ := range G {
+        for y, _ := range G {
+            for _, z := range G[x] {
+                // Add column move edge from (x,y,'C') to (z,y,'R')
+                moves[[3]int{x, y, 'C'}] = append(moves[[3]int{x, y, 'C'}], [3]int{z, y, 'R'})
+                // Add row move edge from (y,x,'R') to (y,z,'C')
+                moves[[3]int{y, x, 'R'}] = append(moves[[3]int{y, x, 'R'}], [3]int{y, z, 'C'})
+            }
+        }
+    }
+
+    return moves
 }
+
 
 func initLengthDictionary(moveGraph map[[3]int][][3]int) map[[3]int]float64 {
     /*
@@ -63,10 +91,7 @@ func initLengthDictionary(moveGraph map[[3]int][][3]int) map[[3]int]float64 {
 
 func updateLengthDictionary(M map[[3]int][][3]int, L map[[3]int]float64) map[[3]int]float64 {
     // This function updates the length dictionary
-    
-    changesMade := true
-    // Creates a variable to check for changes
-
+	changesMade := true
     for changesMade {
         changesMade = false
 
@@ -144,38 +169,40 @@ func main() {
 	fmt.Println()
 	// Roughly visualizes the graph before making it reflexive
 
-	makeReflexive(graph)
+	graph = makeReflexive(graph)
 
 	fmt.Println("After reflexion")
 	for vertex, neighbors := range graph {
 		fmt.Printf("Vertex %d has neighbors %v\n", vertex, neighbors)
 	}
 	//	After reflexion
-
 	fmt.Println()
 
 	// Creates a directed graph with three vertices and six directed edges
 	diGraph := map[int][]int{
-		1: {1, 2},
-		2: {2, 0},
-		3: {0, 1},
+	    0: {1, 2},
+        1: {2, 0},
+        2: {0, 1},	
 	}
 
 	// Print the adjacency list of the di-graph
-    fmt.Println("The adjacency list of the di-graph:")
 	for node, neighbors := range diGraph {
 		fmt.Printf("%d: %v\n", node, neighbors)
 	}
-    fmt.Println()
 
-    fmt.Println("Move graph:")
+	fmt.Println()
 
-	moves := makeMoveGraph(diGraph)
+    testGraph := make(map[int][]int)
+    testGraph[1] = []int{1,2,3, 4}
+    testGraph[2] = []int{2}
+    testGraph[3] = []int{3,4}
+    testGraph[4] = []int{4}
+
+	moves := makeMoveGraph(graph)
 
 	for state, neighbors := range moves {
 		fmt.Printf("%v: %v\n", state, neighbors)
 	}
-    fmt.Println()
      
     lengths := initLengthDictionary(moves)
     fmt.Println("Lengths:")
@@ -197,3 +224,84 @@ func main() {
     fmt.Println(cop_win)
     
 }
+
+
+/* The following is what the output looks like in the console:
+
+Before reflexion
+Vertex 1 has neighbors [2 3 4]
+Vertex 3 has neighbors [4]
+
+After reflexion
+Vertex 1 has neighbors [2 3 4 1]
+Vertex 3 has neighbors [4 3]
+
+The adjacency list of the di-graph:
+3: [0 1]
+1: [1 2]
+2: [2 0]
+
+Move graph:
+[1 3 67]: [[1 3 82] [2 3 82]]
+[3 2 82]: [[3 2 67] [3 0 67]]
+[2 3 82]: [[2 0 67] [2 1 67]]
+[1 1 82]: [[1 1 67] [1 2 67]]
+[1 2 67]: [[1 2 82] [2 2 82]]
+[3 1 82]: [[3 1 67] [3 2 67]]
+[2 1 67]: [[2 1 82] [0 1 82]]
+[2 2 67]: [[2 2 82] [0 2 82]]
+[3 3 67]: [[0 3 82] [1 3 82]]
+[3 1 67]: [[0 1 82] [1 1 82]]
+[1 3 82]: [[1 0 67] [1 1 67]]
+[2 1 82]: [[2 1 67] [2 2 67]]
+[1 2 82]: [[1 2 67] [1 0 67]]
+[2 2 82]: [[2 2 67] [2 0 67]]
+[2 3 67]: [[2 3 82] [0 3 82]]
+[3 2 67]: [[0 2 82] [1 2 82]]
+[3 3 82]: [[3 0 67] [3 1 67]]
+[1 1 67]: [[1 1 82] [2 1 82]]
+
+Lengths:
+[1 2 82]: +Inf
+[1 1 82]: 0
+[2 2 67]: 0
+[2 1 67]: +Inf
+[3 1 67]: +Inf
+[1 3 82]: +Inf
+[1 3 67]: +Inf
+[3 2 82]: +Inf
+[3 1 82]: +Inf
+[2 2 82]: 0
+[2 3 67]: +Inf
+[3 3 82]: 0
+[2 3 82]: +Inf
+[3 3 67]: 0
+[1 2 67]: +Inf
+[2 1 82]: +Inf
+[1 1 67]: 0
+[3 2 67]: +Inf
+
+Updated Lengths:
+[3 1 67]: 1
+[1 3 82]: 0
+[1 3 67]: 1
+[3 2 82]: 1
+[1 2 67]: 1
+[3 1 82]: 1
+[2 2 82]: 0
+[2 3 67]: 1
+[3 3 82]: 0
+[2 3 82]: 1
+[3 3 67]: 0
+[2 1 82]: 1
+[1 1 67]: 0
+[3 2 67]: 1
+[1 2 82]: 1
+[1 1 82]: 0
+[2 2 67]: 0
+[2 1 67]: 1
+
+Did the cop win?
+true
+
+*/
