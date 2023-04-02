@@ -2,8 +2,14 @@
 
 package main
 
-import "fmt"
-import "math"
+import (
+    "fmt"
+    "math"
+    "flag"
+    "runtime/pprof"
+    "os"
+    "log"
+)
 
 func contains(slice []int, val int) bool {
     for _, item := range slice {
@@ -15,23 +21,24 @@ func contains(slice []int, val int) bool {
 }
 
 func makeReflexive(graph map[int][]int) map[int][]int{
-	/*
+    /*
     In this code, the makeReflexive function takes a list containing lists
     of integers and makes every vertex connect to itself by an edge.
     */
     for vertex := range graph {
-		graph[vertex] = append(graph[vertex], vertex)
-	}
+        graph[vertex] = append(graph[vertex], vertex)
+    }
 
-    for vertex, adjacentVertices := range graph {
+    for _, adjacentVertices := range graph {
         for _, adjacentVertex := range adjacentVertices {
-            if !contains(graph[adjacentVertex], vertex) {
+            _, ok := graph[adjacentVertex]
+            if !ok {
                 // the edge (vertex, adjacentVertex) already exists in the graph
                 graph[adjacentVertex] = []int{adjacentVertex}
             }         
         }
     }
-	return graph
+    return graph
 }
 
 
@@ -51,7 +58,7 @@ func makeMoveGraph(G map[int][]int) map[[3]int][][3]int {
     for x := range G {
         G[x] = append(G[x], x)
     }
-      
+
 
     // Loop over each pair of vertices in G and their neighbors
     for x, _ := range G {
@@ -74,24 +81,24 @@ func initLengthDictionary(moveGraph map[[3]int][][3]int) map[[3]int]float64 {
     The function initLengthMap takes a move graph and iterates through every move
     to calculate how many moves (or the length) left for the cop to win
     */
-	lengths := make(map[[3]int]float64)
+    lengths := make(map[[3]int]float64)
 
-	for key := range moveGraph {
+    for key := range moveGraph {
         // If cop position is equal to robber then set the length equal to 0 
-		if key[0] == key[1] {
-			lengths[key] = 0
-        // if the robber position is not equal to the robber then set the length equal to positive infinity
-		} else {
-			lengths[key] = math.Inf(1)
-		}
-	}
-	return lengths
+        if key[0] == key[1] {
+            lengths[key] = 0
+            // if the robber position is not equal to the robber then set the length equal to positive infinity
+        } else {
+            lengths[key] = math.Inf(1)
+        }
+    }
+    return lengths
 }
 
 
 func updateLengthDictionary(M map[[3]int][][3]int, L map[[3]int]float64) map[[3]int]float64 {
     // This function updates the length dictionary
-	changesMade := true
+    changesMade := true
     for changesMade {
         changesMade = false
 
@@ -154,6 +161,25 @@ func checkCopWin(G map[int][]int) bool {
 
 func main() {
 
+    // Parse command-line arguments
+    memProfile := flag.String("memprofile", "", "write memory profile to `file`")
+    flag.Parse()
+
+    // Enable memory profiling if requested
+    if *memProfile != "" {
+        f, err := os.Create(*memProfile)
+        if err != nil {
+            log.Fatal("could not create memory profile: ", err)
+        }
+        defer f.Close()
+
+        pprof.WriteHeapProfile(f)
+        return
+    }
+
+    // Your MoveGraph code goes here
+
+
     graph := map[int][]int{
         1: {2, 3, 4},
         2: {3, 5, 7},
@@ -162,6 +188,8 @@ func main() {
         5: {6, 7},
         6: {7},
     }
+
+
 
 	/* Builds a graph with 4 nodes numbered from 1 to 4 and declares the first node to
 	have 2,3,4 as neigbors, 2 to have no neighbors, and 3 to have 4 as a neigbor.
